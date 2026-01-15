@@ -9,28 +9,27 @@ import datetime
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="Support Bot", page_icon="🤖", layout="wide")
 
-# --- AUTHENTICATION (CLOUD + LOCAL SUPPORT) ---
+# --- AUTHENTICATION ---
 if "gcp_service_account" in st.secrets:
-    # 1. Try loading from Streamlit Cloud Secrets
     service_account_info = st.secrets["gcp_service_account"]
     PROJECT_ID = service_account_info["project_id"]
     credentials = service_account.Credentials.from_service_account_info(service_account_info)
     session_client = dialogflow.SessionsClient(credentials=credentials)
-
 elif os.path.exists("credentials.json"):
-    # 2. Fallback to Local File (for your laptop)
     with open("credentials.json", 'r') as f:
         data = json.load(f)
         PROJECT_ID = data['project_id']
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "credentials.json"
     session_client = dialogflow.SessionsClient()
-
 else:
-    # 3. If both fail
-    st.error("❌ Authentication Error: Could not find 'credentials.json' locally, and 'st.secrets' are missing on the cloud.")
+    st.error("❌ Authentication Error: Keys missing!")
     st.stop()
 
-SESSION_ID = "user_session_" + str(uuid.uuid4())
+# --- FIX: PERSIST SESSION ID ---
+if "session_id" not in st.session_state:
+    st.session_state.session_id = "user_session_" + str(uuid.uuid4())
+
+SESSION_ID = st.session_state.session_id
 
 # --- DIALOGFLOW FUNCTION ---
 def get_dialogflow_response(text):
@@ -45,7 +44,6 @@ st.sidebar.title("📜 History")
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Display Chat
 st.title("🤖 Customer Support Assistant")
 st.markdown("Ask about **Order Status**, **Refunds**, or **Tech Issues**.")
 
@@ -56,7 +54,6 @@ for message in st.session_state.messages:
         timestamp = datetime.datetime.now().strftime("%H:%M")
         st.sidebar.text(f"[{timestamp}] {message['content']}")
 
-# Input
 if prompt := st.chat_input("How can I help you?"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):

@@ -12,3 +12,4 @@ perfect_faq.csv
 clean_faq.csv
 sample.csv
 create_faq.py
+generate_secrets.py
