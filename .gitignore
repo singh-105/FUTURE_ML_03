@@ -1,0 +1,14 @@
+# Ignore the Virtual Environment (Too big, OS specific)
+venv/
+
+# Ignore Secrets (CRITICAL SECURITY)
+credentials.json
+
+# Ignore temporary files
+__pycache__/
+
+# Optional: Ignore data files if you want to keep the repo clean
+perfect_faq.csv
+clean_faq.csv
+sample.csv
+create_faq.py
