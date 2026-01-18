@@ -10,7 +10,7 @@
 ---
 
 ## 📸 Project Screenshot
-![App Screenshot](https://via.placeholder.com/800x400?text=Upload+Your+App+Screenshot+Here)
+<img width="1914" height="1034" alt="Screenshot 2026-01-15 161340" src="https://github.com/user-attachments/assets/79383cb3-1dac-4327-8d3a-9118211d8d68" />
 
 ---
 
