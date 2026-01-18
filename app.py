@@ -15,35 +15,15 @@ if "gcp_service_account" in st.secrets:
     PROJECT_ID = service_account_info["project_id"]
     credentials = service_account.Credentials.from_service_account_info(service_account_info)
     session_client = dialogflow.SessionsClient(credentials=credentials)
-    # New: Client to find the Knowledge Base
-    kb_client = dialogflow.KnowledgeBasesClient(credentials=credentials)
 elif os.path.exists("credentials.json"):
     with open("credentials.json", 'r') as f:
         data = json.load(f)
         PROJECT_ID = data['project_id']
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "credentials.json"
     session_client = dialogflow.SessionsClient()
-    kb_client = dialogflow.KnowledgeBasesClient()
 else:
     st.error("❌ Authentication Error: Keys missing!")
     st.stop()
-
-# --- HELPER: FIND KNOWLEDGE BASE ID ---
-def get_kb_id():
-    try:
-        parent = f"projects/{PROJECT_ID}"
-        # List all Knowledge Bases in the project
-        kbs = kb_client.list_knowledge_bases(parent=parent)
-        for kb in kbs:
-            # Return the ID of the first one we find
-            return kb.name
-    except Exception as e:
-        return None
-    return None
-
-# Load KB ID once
-if "kb_id" not in st.session_state:
-    st.session_state.kb_id = get_kb_id()
 
 # --- FIX: PERSIST SESSION ID ---
 if "session_id" not in st.session_state:
@@ -56,21 +36,8 @@ def get_dialogflow_response(text):
     session = session_client.session_path(PROJECT_ID, SESSION_ID)
     text_input = dialogflow.TextInput(text=text, language_code="en")
     query_input = dialogflow.QueryInput(text=text_input)
-
-    # UPDATED: Tell the bot to look at the Knowledge Base if it exists
-    query_params = None
-    if st.session_state.kb_id:
-        query_params = dialogflow.QueryParameters(
-            knowledge_base_names=[st.session_state.kb_id]
-        )
-
-    response = session_client.detect_intent(
-        request={
-            "session": session, 
-            "query_input": query_input,
-            "query_params": query_params
-        }
-    )
+    # We removed the broken "knowledge_base" code here to stop the crash
+    response = session_client.detect_intent(request={"session": session, "query_input": query_input})
     return response.query_result.fulfillment_text
 
 # --- UI LAYOUT ---
@@ -93,11 +60,8 @@ if prompt := st.chat_input("How can I help you?"):
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    with st.spinner("Thinking..."):
+    with st.spinner("..."):
         bot_reply = get_dialogflow_response(prompt)
-        # Fallback if bot is silent (sometimes happens with empty KB answers)
-        if not bot_reply:
-            bot_reply = "I'm sorry, I didn't catch that. Could you rephrase?"
 
     st.session_state.messages.append({"role": "assistant", "content": bot_reply})
     with st.chat_message("assistant"):
